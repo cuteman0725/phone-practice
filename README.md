@@ -17,7 +17,10 @@
 
 ## 檔案
 - `index.html`、`style.css`、`script.js`：網站本體（不需要安裝、不需要編譯）
-- `screenshots/`：測試截圖（可以不用上傳）
+- `index.md`：index.html 的架構說明與 Mermaid 圖表
+- `style.md`：style.css 的設計說明與 Mermaid 圖表
+- `script.md`：script.js 的邏輯說明與 Mermaid 圖表
+- `.nojekyll`：GitHub Pages 設定檔
 
 ## 用 GitHub Pages 發布成網站
 1. 登入 <https://github.com>，右上角「+」→ **New repository**。
