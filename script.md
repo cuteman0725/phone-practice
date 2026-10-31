@@ -35,7 +35,7 @@ flowchart TD
     Restart -->|否| Start
 ```
 
-## 情境 F 詳細流程
+## 情境 F 詳細流程（13 步驟，含獨立換行步驟）
 
 ```mermaid
 sequenceDiagram
@@ -67,16 +67,23 @@ sequenceDiagram
     S->>U: 展開輸入框並顯示鍵盤
     
     U->>S: 長按輸入框
-    S->>U: 顯示貼上按鈕
+    S->>U: 顯示貼上按鈕（綠色）
     
     U->>S: 點擊「貼上」
-    S->>U: 接龍文字出現在輸入框
+    S->>U: 接龍文字出現，游標閃爍在結尾
+    Note over U,S: 游標視覺化：綠色 | 閃爍
+    
+    U->>S: 點擊「換行 ↵」按鈕（藍色）
+    S->>U: 游標跳到新行
+    Note over U,S: 新增獨立步驟：按換行鍵
     
     U->>S: 點擊「11.」按鈕
     S->>U: 新增「11. 」到輸入框
+    Note over U,S: 分步輸入：先輸序號
     
     U->>S: 點擊「小蓉」按鈕
     S->>U: 新增「小蓉」到輸入框
+    Note over U,S: 分步輸入：再輸名字
     
     U->>S: 點擊傳送按鈕
     S->>G: 新訊息加入群組
@@ -295,7 +302,7 @@ classDiagram
 
 ## 群組接龍特殊邏輯
 
-### 複製貼上機制
+### 複製貼上換行機制（含獨立換行步驟）
 
 ```mermaid
 stateDiagram-v2
@@ -307,18 +314,78 @@ stateDiagram-v2
     
     已複製 --> 輸入框: chainCopied = CHAIN_INITIAL
     輸入框 --> 長按輸入框: 展開鍵盤
-    長按輸入框 --> 貼上: 顯示貼上按鈕
+    長按輸入框 --> 貼上: 顯示貼上按鈕（綠色）
     
-    貼上 --> 輸入中: 文字出現在輸入框
-    輸入中 --> 輸入序號: 點擊「11.」
-    輸入序號 --> 輸入名字: chainCopied += "11. "
+    貼上 --> 顯示游標: 文字出現，游標閃爍
+    note right of 顯示游標
+        游標在文字結尾
+        綠色 | 閃爍動畫
+    end note
     
-    輸入名字 --> 完成輸入: 點擊「小蓉」
-    完成輸入 --> 傳送: chainCopied += "小蓉"
+    顯示游標 --> 按換行: 點擊「換行 ↵」（藍色）
+    note right of 按換行
+        獨立步驟
+        使用者難點
+    end note
     
+    按換行 --> 新行游標: chainCopied += "\n"
+    新行游標 --> 輸入序號: 點擊「11.」
+    輸入序號 --> 序號完成: chainCopied += "11. "
+    
+    序號完成 --> 輸入名字: 點擊「小蓉」
+    輸入名字 --> 完成輸入: chainCopied += "小蓉"
+    
+    完成輸入 --> 傳送: 點擊傳送
     傳送 --> 群組聊天: chainSent = true
     群組聊天 --> 成功: 顯示新訊息
     成功 --> [*]
+```
+
+### 動態鍵盤顯示邏輯
+
+```mermaid
+stateDiagram-v2
+    [*] --> 初始鍵盤: 進入輸入畫面
+    
+    state 初始鍵盤 {
+        [*] --> 注音鍵盤
+        注音鍵盤 --> 綠色貼上鍵: 下排左側
+        綠色貼上鍵 --> 灰色換行鍵: 下排右側（未啟用）
+    }
+    
+    初始鍵盤 --> 換行鍵盤: 貼上後
+    
+    state 換行鍵盤 {
+        [*] --> 注音鍵盤2
+        注音鍵盤2 --> 灰色空白鍵: 下排左側
+        灰色空白鍵 --> 藍色換行鍵: 下排右側（高亮）
+        note right of 藍色換行鍵
+            「換行 ↵」
+            清晰可見
+        end note
+    }
+    
+    換行鍵盤 --> 序號鍵盤: 按換行後
+    
+    state 序號鍵盤 {
+        [*] --> 11點按鈕: 大按鈕
+        11點按鈕 --> 小蓉按鈕: 灰色（未啟用）
+    }
+    
+    序號鍵盤 --> 名字鍵盤: 按「11.」後
+    
+    state 名字鍵盤 {
+        [*] --> 11點按鈕灰: 灰色（已完成）
+        11點按鈕灰 --> 小蓉按鈕高亮: 大按鈕（高亮）
+    }
+    
+    名字鍵盤 --> 完成鍵盤: 按「小蓉」後
+    
+    state 完成鍵盤 {
+        [*] --> 簡化顯示: 「完成輸入」
+    }
+    
+    完成鍵盤 --> [*]: 傳送
 ```
 
 ## 響應式設計
@@ -369,6 +436,30 @@ graph TB
 
 ```javascript
 const CHAIN_USER_NAME = '您的名字';
+```
+
+### 如何新增類似的換行步驟
+
+參考情境 F 的實作方式：
+
+1. **在步驟定義中拆分動作**：
+```javascript
+{ screen: 'input', target: 'paste-btn', say: '按貼上' },
+{ screen: 'input', target: 'newline-btn', say: '按換行鍵' },  // 獨立步驟
+{ screen: 'input', target: 'type-text', say: '輸入文字' }
+```
+
+2. **根據 target 顯示不同鍵盤**：
+```javascript
+if (st.target === 'newline-btn') {
+  keyboard = `<button class="enter-key" data-t="newline-btn">換行 ↵</button>`;
+}
+```
+
+3. **顯示游標提示**：
+```javascript
+const showCursor = st.target === 'newline-btn';
+const displayText = text + (showCursor ? '<span class="cursor">|</span>' : '');
 ```
 
 ### 如何調整接龍初始內容
