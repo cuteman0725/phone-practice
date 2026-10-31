@@ -50,7 +50,12 @@
     p_scan: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M6 16V8h8M34 8h8v8M42 32v8h-8M14 40H6v-8M10 24h28"/></svg>',
     p_send: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M8 18h30l-8-8M40 30H10l8 8"/></svg>',
     p_add: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><circle cx="24" cy="24" r="17"/><path d="M24 15v18M15 24h18"/></svg>',
-    check: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="11"/><path d="M12 7v10M7 12h10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>',
+    location: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#fff"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="#e53935"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#fff"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M15 15l6 6"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>'
   };
 
   // ---------- 資料 ----------
@@ -64,7 +69,7 @@
   const SHOP_B = '好味便當', AMOUNT_B = 120;
   const SHOP_C = '巷口豆漿店', AMOUNT_C = 85;
 
-  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false };
+  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false, locationSent: false, locAddr: '', searchText: '' };
 
   const cartTotal = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0) * m.price, 0);
   const cartCount = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0), 0);
@@ -88,7 +93,16 @@
     </div>`,
 
     lineHome: () => {
-      const tab = (k, n, ic) => `<button class="tab${k === 'home' ? ' on' : ''}" ${k === 'wallet' ? 'data-t="wallet"' : `data-wrong="這是「${n}」。請按<b>最右邊</b>的「錢包」。"`}>${ic}<span>${n}</span></button>`;
+      const st = step();
+      const isChat = st && (st.target === 'chat-tab' || st.screen === 'lineChat');
+      const tab = (k, n, ic) => {
+        let attr = '';
+        if (k === 'wallet') attr = 'data-t="wallet"';
+        else if (k === 'chat' && st && st.target === 'chat-tab') attr = 'data-t="chat-tab"';
+        else if (k === 'wallet' || (k === 'chat' && isChat)) attr = `data-wrong="這是「${n}」。請按${isChat ? '<b>「聊天」</b>' : '<b>右下角的「錢包」</b>'}。"`;
+        else attr = `data-wrong="這是「${n}」。請按${isChat ? '<b>左邊的「聊天」</b>' : '<b>右下角的「錢包」</b>'}。"`;
+        return `<button class="tab${k === 'home' ? ' on' : ''}" ${attr}>${ic}<span>${n}</span></button>`;
+      };
       const fr = (n, s, c) => `<button class="friend" data-wrong="這是朋友的名字。我們要按<b>右下角</b>的「錢包」喔。"><span class="avatar" style="background:${c}">${n[0]}</span><span>${n}<small>${s}</small></span></button>`;
       return `<div class="scr lhome">
         <div class="appbar"><span class="avatar" style="background:#8d6e63">我</span><span>主頁</span></div>
@@ -110,6 +124,103 @@
         <button class="w-item" data-wrong="這是會員卡。請按上面綠色的「LINE Pay」。"><span class="dot" style="background:#e3f2fd">💳</span>會員卡</button>
       </div>
     </div>`,
+
+    lineChat: () => {
+      const ch = (n, msg, t, c, target) => `<button class="chat-item" ${target ? 'data-t="open-chat"' : 'data-wrong="這不是我們要開的聊天喔。請按「家人群組」。"'}><span class="avatar" style="background:${c}">${n[0]}</span><div class="chat-info"><div class="chat-name">${n}</div><div class="chat-msg">${msg}</div></div><div class="chat-time">${t}</div></button>`;
+      return `<div class="scr lhome">
+        <div class="appbar"><span>聊天</span></div>
+        <div class="scroll">
+          <div class="search-in" data-wrong="這是搜尋。請按下面的「家人群組」。">🔍 搜尋</div>
+          ${ch('家人群組', '兒子 建錩：週末回家', '10:15', '#ffa726', true)}
+          ${ch('女兒 小美', '媽，記得吃飯喔！', '昨天', '#ec407a', false)}
+          ${ch('同學會', '(5 人)', '週三', '#7e57c2', false)}
+          ${ch('社區管理員', '繳費通知', '週一', '#66bb6a', false)}
+        </div>
+        <div class="tabs"><button class="tab" data-wrong="這是「主頁」。我們在「聊天」這裡。">${I.t_home}<span>主頁</span></button><button class="tab on">${I.t_chat}<span>聊天</span></button><button class="tab" data-wrong="這是「貼文串」。我們在「聊天」這裡。">${I.t_post}<span>貼文串</span></button><button class="tab" data-wrong="這是「新聞」。我們在「聊天」這裡。">${I.t_news}<span>新聞</span></button><button class="tab" data-wrong="這是「錢包」。我們在「聊天」這裡。">${I.t_wallet}<span>錢包</span></button></div>
+      </div>`;
+    },
+
+    chatRoom: () => {
+      const msg = (txt, isMe, time) => `<div class="msg ${isMe ? 'msg-me' : 'msg-other'}"><div class="msg-bubble">${txt}</div><div class="msg-time">${time}</div></div>`;
+      const locationMsg = S.locationSent ? `<div class="msg msg-me"><div class="msg-bubble loc-bubble"><div class="loc-icon">${I.pin}</div><div class="loc-txt">${S.locAddr || '我的位置'}</div></div><div class="msg-time">現在</div></div>` : '';
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ffa726">家</span><span>家人群組 (3)</span></div>
+        <div class="scroll">
+          ${msg('大家這週末回來嗎？', false, '週四')}
+          ${msg('我跟爸爸都會回去', false, '週四')}
+          ${msg('好啊，我也回去', true, '週四')}
+          ${msg('週末回家', false, '10:15')}
+          ${locationMsg}
+        </div>
+        <div class="chat-input-bar">
+          <button class="chat-plus" data-t="chat-plus">${I.plus}</button>
+          <div class="chat-input" data-wrong="這是輸入框。請按<b>左邊的 ＋ 按鈕</b>。">輸入訊息</div>
+          <button class="chat-send" data-wrong="這是傳送按鈕。請按<b>左邊的 ＋ 按鈕</b>。">${I.send}</button>
+        </div>
+      </div>`;
+    },
+
+    chatMenu: () => `<div class="scr chat-menu">
+      <div class="menu-overlay" data-wrong="請按下面選單中的「位置資訊」。"></div>
+      <div class="menu-popup">
+        <button class="menu-item" data-wrong="這是「相簿」。我們要按「位置資訊」。"><span class="menu-icon" style="background:#9c27b0">${I.photo}</span><span>相簿</span></button>
+        <button class="menu-item" data-wrong="這是「相機」。我們要按「位置資訊」。"><span class="menu-icon" style="background:#ef6c00">${I.cam}</span><span>相機</span></button>
+        <button class="menu-item" data-t="location-menu"><span class="menu-icon" style="background:#4caf50">${I.location}</span><span>位置資訊</span></button>
+        <button class="menu-item" data-wrong="這是「檔案」。我們要按「位置資訊」。"><span class="menu-icon" style="background:#607d8b">${I.t_post}</span><span>檔案</span></button>
+      </div>
+    </div>`,
+
+    locationPermission: () => `<div class="scr permission">
+      <div class="perm-overlay"></div>
+      <div class="perm-dialog">
+        <div class="perm-title">允許「LINE」取用你的位置嗎？</div>
+        <div class="perm-text">此 App 需要使用你的位置資訊來分享所在地點。</div>
+        <div class="perm-btns">
+          <button class="perm-btn" data-wrong="先不要拒絕喔。請按下面的<b>「允許」</b>。">拒絕</button>
+          <button class="perm-btn primary" data-t="allow-location">允許</button>
+        </div>
+      </div>
+    </div>`,
+
+    locationMap: () => {
+      const hasSearch = S.scn === 'E' && step().screen === 'locationMap';
+      const addr = S.locAddr || '目前位置';
+      return `<div class="scr loc-map">
+        <div class="appbar"><span class="back">‹</span><span>選擇位置</span></div>
+        <div class="map-view" data-wrong="請按${hasSearch ? '上面的搜尋框，輸入地址' : '右下角的「分享」或「傳送」按鈕'}。">
+          <div class="map-bg"></div>
+          <div class="map-pin">${I.pin}</div>
+          ${hasSearch ? `<div class="map-search"><button class="search-box" data-t="search-box">${I.search} 搜尋地點或地址</button></div>` : ''}
+        </div>
+        <div class="loc-info">
+          <div class="loc-name">${addr}</div>
+          <div class="loc-addr-detail">${addr === '目前位置' ? '練習用模擬位置' : '臺北市中正區北平西路3號'}</div>
+        </div>
+        <button class="loc-send-btn" data-t="send-location">分享 / 傳送</button>
+      </div>`;
+    },
+
+    locationSearch: () => {
+      const places = ['臺北車站', '台北101', '西門町', '中正紀念堂', '士林夜市'];
+      const pl = (name, addr) => `<button class="place-item" data-t="place-${name}"><div class="place-icon">${I.location}</div><div class="place-info"><div class="place-name">${name}</div><div class="place-addr">${addr}</div></div></button>`;
+      return `<div class="scr loc-search">
+        <div class="appbar">
+          <button class="back" data-t="back-from-search">‹</button>
+          <div class="search-input-box">
+            <span class="search-icon">${I.search}</span>
+            <input class="search-input" placeholder="搜尋地點或地址" data-neutral value="${S.searchText || ''}" />
+          </div>
+        </div>
+        <div class="scroll">
+          <div class="sec-t">建議地點</div>
+          ${pl('臺北車站', '臺北市中正區北平西路3號')}
+          ${pl('台北101', '臺北市信義區信義路五段7號')}
+          ${pl('西門町', '臺北市萬華區成都路')}
+          <div class="sec-t">最近使用</div>
+          ${pl('中正紀念堂', '臺北市中正區中山南路21號')}
+        </div>
+      </div>`;
+    },
 
     payHome: () => {
       const pb = (k, n, ic) => {
@@ -252,6 +363,14 @@
   const PIN_STEP = { screen: 'pin', target: null, glow: '[data-glow]', enter() { S.pin = ''; },
     say: '請輸入<span class="em">6 個數字</span>的密碼。（練習用，隨便按 6 個數字）' };
 
+  const CHAT_COMMON = [
+    { screen: 'home', target: 'line', say: '這是手機的桌面。請按<span class="em">綠色的「LINE」</span>圖示。' },
+    { screen: 'lineHome', target: 'chat-tab', say: '打開 LINE 了！請按<span class="em">下方的「聊天」</span>。' },
+    { screen: 'lineChat', target: 'open-chat', say: '這是聊天列表。請按<span class="em">「家人群組」</span>打開聊天室。' },
+    { screen: 'chatRoom', target: 'chat-plus', say: '這是跟家人的聊天室。請按<span class="em">左下角的 ＋ 按鈕</span>。' },
+    { screen: 'chatMenu', target: 'location-menu', say: '出現選單了！請按<span class="em">「位置資訊」</span>。' }
+  ];
+
   const SCENARIOS = {
     A: { name: '在餐廳掃碼點餐', steps: [...COMMON,
       { screen: 'payHome', target: 'scan', say: '坐好後，桌上會有 QR 碼。請按<span class="em">「掃描」</span>。' },
@@ -279,6 +398,22 @@
       { screen: 'confirm', target: 'confirm', say: () => `看一下金額是 ${payAmount()} 元，店名也對，請按<span class="em">「確認付款」</span>。` },
       PIN_STEP,
       { screen: 'success', final: true, say: '🎉 太棒了！你自己掃碼付款成功了！' }
+    ] },
+    D: { name: '傳送我現在的位置', steps: [...CHAT_COMMON,
+      { screen: 'locationPermission', target: 'allow-location', say: 'LINE 需要權限才能知道你的位置。請按<span class="em">「允許」</span>。' },
+      { screen: 'locationMap', target: 'send-location', enter() { S.locAddr = '目前位置'; S.locationSent = false; },
+        say: '地圖顯示你現在的位置（練習用模擬位置）。請按下方的<span class="em">「分享 / 傳送」</span>按鈕。' },
+      { screen: 'chatRoom', final: true, enter() { S.locationSent = true; }, 
+        say: '🎉 太棒了！位置已經傳送到聊天室了！家人就能知道你在哪裡。' }
+    ] },
+    E: { name: '傳送一個地址', steps: [...CHAT_COMMON,
+      { screen: 'locationMap', target: 'search-box', enter() { S.locAddr = '目前位置'; S.locationSent = false; S.searchText = ''; },
+        say: '這是地圖畫面。我們要搜尋地點。請按<span class="em">上方的搜尋框</span>。' },
+      { screen: 'locationSearch', target: 'place-臺北車站', say: '可以輸入地址，或選建議地點。請按<span class="em">「臺北車站」</span>。' },
+      { screen: 'locationMap', target: 'send-location', enter() { S.locAddr = '臺北車站'; },
+        say: '地圖已經移動到<span class="em">臺北車站</span>了。請按下方的<span class="em">「分享 / 傳送」</span>按鈕。' },
+      { screen: 'chatRoom', final: true, enter() { S.locationSent = true; },
+        say: '🎉 太棒了！臺北車站的位置已經傳送到聊天室了！' }
     ] }
   };
 
@@ -448,7 +583,7 @@
     const o = $('#optSpeak'); o.setAttribute('aria-pressed', v); o.textContent = `🔊 自動唸出說明：${v ? '開' : '關'}`;
   }
   function startScenario(k) {
-    S.scn = k; S.cart = {}; S.pin = ''; S.amt = '';
+    S.scn = k; S.cart = {}; S.pin = ''; S.amt = ''; S.locationSent = false; S.locAddr = ''; S.searchText = '';
     el.start.hidden = true; el.practice.hidden = false; el.menuBtn.hidden = false;
     try { history.replaceState(null, '', '#' + k); } catch (e) { /* file:// */ }
     window.scrollTo(0, 0);
