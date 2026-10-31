@@ -293,27 +293,59 @@
 
     groupChatInput: () => {
       const st = step();
-      const showKeyboard = st.target === 'type-name' || st.target === 'send-chain';
       const inputText = S.chainCopied || '';
       
-      return `<div class="scr chat-room">
-        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
-        <div class="scroll scroll-compact">
-          <div class="msg msg-other"><div class="msg-bubble chain-msg">${CHAIN_INITIAL.replace(/\n/g, '<br>')}</div><div class="msg-time">09:35</div></div>
-        </div>
-        <div class="chat-input-bar-expanded">
-          <div class="input-area" ${st.target === 'paste-box' ? 'data-t="paste-box"' : 'data-wrong="現在不用按這裡。請按下面的「貼上」按鈕。"'}>
-            ${inputText ? inputText.replace(/\n/g, '<br>') : '<span class="placeholder">輸入訊息</span>'}
-          </div>
-          <button class="input-send" ${st.target === 'send-chain' ? 'data-t="send-chain"' : 'data-wrong="還沒輸入完喔。請先加上你的名字。"'}>${I.send}</button>
-        </div>
-        ${showKeyboard ? `<div class="keyboard" data-neutral>
+      // 顯示游標（在文字結尾）
+      const showCursor = inputText && (st.target === 'newline-btn' || st.target === 'type-number' || st.target === 'type-name' || st.target === 'send-chain');
+      const displayText = inputText ? inputText.replace(/\n/g, '<br>') + (showCursor ? '<span class="cursor">|</span>' : '') : '<span class="placeholder">輸入訊息</span>';
+      
+      // 判斷要顯示哪種鍵盤
+      let keyboard = '';
+      
+      if (st.target === 'newline-btn') {
+        // 貼上後，顯示有換行鍵的鍵盤
+        keyboard = `<div class="keyboard" data-neutral>
           <div class="kb-row">
-            <button class="kb-key" data-act="type" data-v="11. ">11.</button>
-            <button class="kb-key wide" data-act="type" data-v="${CHAIN_USER_NAME}" ${st.target === 'type-name' ? 'data-t="type-name"' : ''}>${CHAIN_USER_NAME}</button>
+            <button class="kb-key">ㄅ</button>
+            <button class="kb-key">ㄆ</button>
+            <button class="kb-key">ㄇ</button>
+            <button class="kb-key">ㄈ</button>
+            <button class="kb-key">ㄉ</button>
           </div>
-          <div class="kb-helper">提示：按「11.」然後按「${CHAIN_USER_NAME}」</div>
-        </div>` : `<div class="keyboard" data-neutral>
+          <div class="kb-row">
+            <button class="kb-key wide" data-wrong="還沒換行喔。請按右邊的<b>「換行」</b>鍵。">空白鍵</button>
+            <button class="kb-key wide enter-key" data-t="newline-btn">換行 ↵</button>
+          </div>
+          <div class="kb-helper">提示：按鍵盤右下角的「換行」鍵</div>
+        </div>`;
+      } else if (st.target === 'type-number') {
+        // 換行後，顯示「11.」按鈕
+        keyboard = `<div class="keyboard" data-neutral>
+          <div class="kb-row">
+            <button class="kb-key wide" data-t="type-number">11.</button>
+            <button class="kb-key" data-wrong="先按「11.」序號。">${CHAIN_USER_NAME}</button>
+          </div>
+          <div class="kb-helper">提示：按「11.」</div>
+        </div>`;
+      } else if (st.target === 'type-name') {
+        // 輸入序號後，顯示名字按鈕
+        keyboard = `<div class="keyboard" data-neutral>
+          <div class="kb-row">
+            <button class="kb-key" data-wrong="序號已經輸入了。現在按「${CHAIN_USER_NAME}」。">11.</button>
+            <button class="kb-key wide" data-t="type-name">${CHAIN_USER_NAME}</button>
+          </div>
+          <div class="kb-helper">提示：按「${CHAIN_USER_NAME}」</div>
+        </div>`;
+      } else if (st.target === 'send-chain') {
+        // 已完成輸入，準備傳送（鍵盤縮小或隱藏）
+        keyboard = `<div class="keyboard keyboard-minimal" data-neutral>
+          <div class="kb-row">
+            <button class="kb-key" disabled>完成輸入</button>
+          </div>
+        </div>`;
+      } else {
+        // 初始鍵盤（貼上之前）
+        keyboard = `<div class="keyboard" data-neutral>
           <div class="kb-row">
             <button class="kb-key" ${st.target === 'long-press-input' ? 'data-t="long-press-input"' : 'data-wrong="這是一般按鍵。請<b>長按</b>輸入框（上面白色的地方）。"'}>ㄅ</button>
             <button class="kb-key">ㄆ</button>
@@ -323,9 +355,23 @@
           </div>
           <div class="kb-row">
             <button class="kb-key wide paste-key" ${st.target === 'paste-btn' ? 'data-t="paste-btn"' : 'data-wrong="這些是其他按鍵。請按<b>「貼上」</b>按鈕。"'}>貼上</button>
-            <button class="kb-key wide">換行</button>
+            <button class="kb-key wide" data-wrong="先按「貼上」。">換行</button>
           </div>
-        </div>`}
+        </div>`;
+      }
+      
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-compact">
+          <div class="msg msg-other"><div class="msg-bubble chain-msg">${CHAIN_INITIAL.replace(/\n/g, '<br>')}</div><div class="msg-time">09:35</div></div>
+        </div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-area" ${st.target === 'paste-box' ? 'data-t="paste-box"' : 'data-wrong="現在不用按這裡。請看下面的指示操作。"'}>
+            ${displayText}
+          </div>
+          <button class="input-send" ${st.target === 'send-chain' ? 'data-t="send-chain"' : 'data-wrong="還沒輸入完喔。請先照指示完成輸入。"'}>${I.send}</button>
+        </div>
+        ${keyboard}
       </div>`;
     },
 
@@ -535,8 +581,12 @@
         say: '輸入框變大了，下面有鍵盤。請<span class="em">長按輸入框</span>（白色的地方）。' },
       { screen: 'groupChatInput', target: 'paste-btn', enter() { S.chainCopied = ''; },
         say: '鍵盤上有「貼上」按鈕。請按<span class="em">「貼上」</span>。' },
-      { screen: 'groupChatInput', target: 'type-name', enter() { S.chainCopied = CHAIN_INITIAL; },
-        say: '貼上成功！接龍訊息出現了。現在按<span class="em">「11.」然後按「' + CHAIN_USER_NAME + '」</span>加上你的名字。' },
+      { screen: 'groupChatInput', target: 'newline-btn', enter() { S.chainCopied = CHAIN_INITIAL; },
+        say: '貼上成功！接龍訊息出現了。現在按<span class="em">鍵盤右下角的「換行」鍵</span>，讓游標跳到下一行。' },
+      { screen: 'groupChatInput', target: 'type-number', enter() { S.chainCopied = CHAIN_INITIAL + '\n'; },
+        say: '游標跳到新的一行了！現在按<span class="em">「11.」</span>。' },
+      { screen: 'groupChatInput', target: 'type-name', enter() { S.chainCopied = CHAIN_INITIAL + '\n11. '; },
+        say: '序號加好了！現在按<span class="em">「' + CHAIN_USER_NAME + '」</span>加上你的名字。' },
       { screen: 'groupChatInput', target: 'send-chain', 
         enter() { S.chainCopied = CHAIN_INITIAL + '\n11. ' + CHAIN_USER_NAME; },
         say: '名字加好了！請按<span class="em">右邊的傳送按鈕</span>。' },
@@ -676,13 +726,16 @@
       const v = b.dataset.v;
       S.chainCopied += v;
       render(true);
-      if (S.chainCopied.includes(CHAIN_USER_NAME)) {
-        // 完成輸入
-        const st = step();
-        if (st.target === 'type-name') {
-          toast('👍 名字加好了！', true);
-          setTimeout(next, 500);
-        }
+      
+      const st = step();
+      
+      // 根據不同步驟給予不同的反饋
+      if (st.target === 'type-number') {
+        toast('👍 序號加好了！', true);
+        setTimeout(next, 500);
+      } else if (st.target === 'type-name') {
+        toast('👍 名字加好了！', true);
+        setTimeout(next, 500);
       }
     }
   };
