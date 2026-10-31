@@ -444,8 +444,13 @@
     el.prevBtn.disabled = S.idx === 0;
     applyGlow(S.hints);
     if (!keepScroll) {
-      const g = glowTarget();
-      if (g && g.scrollIntoView) g.scrollIntoView({ block: 'nearest' });
+      // 自動滾動到目標元素（在模擬手機畫面內）
+      setTimeout(() => {
+        const g = glowTarget();
+        if (g && g.scrollIntoView) {
+          g.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }, 100);
     }
     updateClock();
   }
