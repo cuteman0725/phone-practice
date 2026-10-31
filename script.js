@@ -790,6 +790,18 @@
     menuBtn: $('#btnMenu'), hintBtn: $('#btnHint'), speakBtn: $('#btnSpeak'), prevBtn: $('#btnPrev')
   };
 
+  function scrollInputToBottom() {
+    requestAnimationFrame(() => {
+      const inputBox = el.screen.querySelector('.input-box-text.scrolled-bottom');
+      if (inputBox) {
+        inputBox.scrollTop = inputBox.scrollHeight;
+        requestAnimationFrame(() => {
+          inputBox.scrollTop = inputBox.scrollHeight;
+        });
+      }
+    });
+  }
+
   function render(keepScroll) {
     const st = step();
     const sc = el.screen.querySelector('.scroll');
@@ -814,6 +826,7 @@
         }
       }, 100);
     }
+    scrollInputToBottom();
     updateClock();
   }
 
@@ -1026,6 +1039,12 @@
   setHints(S.hints); setAutoSpeak(S.autoSpeak);
   const h = location.hash.replace('#', '');
   if (SCENARIOS[h]) startScenario(h);
+
+  // 監聽視窗大小變化，重新捲動輸入框
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scrollInputToBottom);
+  }
+  window.addEventListener('resize', scrollInputToBottom);
 
   // 給測試用（不影響使用）
   window.__lpp = { S, step: () => step(), SCENARIOS };
