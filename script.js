@@ -138,7 +138,7 @@
     '10. 家豪'
   ].join('\n');
 
-  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false, locationSent: false, locAddr: '', searchText: '', chainInput: '', zhuyinBuf: '', candidateIdx: 0, showKeyboard: false };
+  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false, locationSent: false, locAddr: '', searchText: '', chainInput: '', zhuyinBuf: '', pasteMenuExpanded: false };
 
   const cartTotal = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0) * m.price, 0);
   const cartCount = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0), 0);
@@ -275,6 +275,7 @@
 
     androidPaste: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const expanded = S.pasteMenuExpanded;
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
@@ -282,19 +283,24 @@
           <div class="input-box-focus"><span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒貼上。">${I.send}</button>
         </div>
-        <div class="paste-popup" data-t="paste-popup">貼上</div>
+        <div class="paste-toolbar ${expanded ? 'expanded' : ''}">
+          ${expanded ? '<button class="paste-tool-btn" data-act="paste-back">←</button>' : ''}
+          <button class="paste-tool-btn" data-t="paste-popup">貼上</button>
+          ${expanded ? '<button class="paste-tool-btn" data-wrong="我們只需要「貼上」。請按「貼上」。">全選</button><button class="paste-tool-btn" data-wrong="我們只需要「貼上」。請按「貼上」。">朗讀</button>' : '<button class="paste-tool-btn" data-act="paste-more">⋮</button>'}
+        </div>
         ${gboardZhuyin('initial')}
       </div>`;
     },
 
     groupChatPasted: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL;
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-5).join('\n');
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
         </div>
         ${gboardZhuyin('pasted')}
@@ -303,12 +309,13 @@
 
     groupChatNewline: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL + '\n';
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-4).join('\n') + '\n';
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
         </div>
         ${gboardZhuyin('newline')}
@@ -317,12 +324,13 @@
 
     groupChatNum: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL + '\n' + S.chainInput;
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-3).join('\n') + '\n' + S.chainInput;
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
         </div>
         ${gboardNum()}
@@ -331,13 +339,14 @@
 
     groupChatZhuyin1: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL + '\n' + S.chainInput + S.zhuyinBuf;
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-3).join('\n') + '\n' + S.chainInput + S.zhuyinBuf;
       const cand = S.zhuyinBuf ? ['小', '笑', '曉'] : [];
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
         </div>
         ${gboardZhuyinWithCand('xiao', cand)}
@@ -346,13 +355,14 @@
 
     groupChatZhuyin2: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL + '\n' + S.chainInput + S.zhuyinBuf;
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-3).join('\n') + '\n' + S.chainInput + S.zhuyinBuf;
       const cand = S.zhuyinBuf ? ['蓉', '榮', '容'] : [];
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
           <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
         </div>
         ${gboardZhuyinWithCand('rong', cand)}
@@ -361,12 +371,13 @@
 
     groupChatComplete: () => {
       const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      const input = CHAIN_INITIAL + '\n' + S.chainInput;
+      const lines = CHAIN_INITIAL.split('\n');
+      const lastFew = lines.slice(-3).join('\n') + '\n' + S.chainInput;
       return `<div class="scr chat-room">
         <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
         <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
         <div class="chat-input-bar-expanded">
-          <div class="input-box-text">${input.replace(/\n/g, '<br>')}</div>
+          <div class="input-box-text scrolled-bottom">${lastFew.replace(/\n/g, '<br>')}</div>
           <button class="input-send-btn" data-t="send-btn">${I.send}</button>
         </div>
         ${gboardZhuyin('complete')}
@@ -757,9 +768,9 @@
       { screen: 'lineLongPress', target: 'copy-item', say: 'LINE 的選單出現了！請按<span class="em">「複製」</span>。' },
       { screen: 'groupChatCopied', target: 'input-box', say: '已複製！現在請<span class="em">點擊下方的輸入框</span>（寫「輸入訊息」的地方）。' },
       { screen: 'groupChatKeyboard', target: 'long-press-input', say: '鍵盤出現了！請<span class="em">長按輸入框內部</span>（白色的地方），準備貼上。' },
-      { screen: 'androidPaste', target: 'paste-popup', say: 'Android 的「貼上」選項出現了！請按<span class="em">「貼上」</span>。' },
-      { screen: 'groupChatPasted', target: 'enter-key', say: '接龍訊息貼上了！游標在最後。請按<span class="em">鍵盤右下角的「換行」鍵</span>。' },
-      { screen: 'groupChatNewline', target: 'switch-123', say: '游標跳到新行了！現在要輸入「11.」。請先按<span class="em">左下角的「符號」</span>切換到數字。' },
+      { screen: 'androidPaste', target: 'paste-popup', say: 'Android 貼上工具列出現了！（若想看更多選項，可按「⋮」展開。）請按<span class="em">「貼上」</span>。' },
+      { screen: 'groupChatPasted', target: 'enter-key', say: '貼上了！輸入框顯示最後幾個名字，游標在最後一個名字後面。請按<span class="em">鍵盤右下角的「換行」鍵</span>。' },
+      { screen: 'groupChatNewline', target: 'switch-123', say: '游標跳到新的一行了（在 10. 家豪 下面）！現在要輸入「11.」。請先按<span class="em">左下角的「符號」</span>切換到數字。' },
       { screen: 'groupChatNum', target: 'type-11', say: '數字鍵盤出現了！請<span class="em">依序按 1 1 .</span>（點三次）。' },
       { screen: 'groupChatZhuyin1', target: 'type-xiao', say: '輸入「小」：請<span class="em">依序按 ㄒ ㄧ ㄠ ˇ</span>，然後按候選列的<span class="em">「小」</span>。' },
       { screen: 'groupChatZhuyin2', target: 'type-rong', say: '輸入「蓉」：請<span class="em">依序按 ㄖ ㄨ ㄥ ˊ</span>，然後按候選列的<span class="em">「蓉」</span>。' },
@@ -914,6 +925,14 @@
       const v = b.dataset.v;
       S.zhuyinBuf += v;
       render(true);
+    },
+    'paste-more'() {
+      S.pasteMenuExpanded = true;
+      render(true);
+    },
+    'paste-back'() {
+      S.pasteMenuExpanded = false;
+      render(true);
     }
   };
 
@@ -972,7 +991,7 @@
     const o = $('#optSpeak'); o.setAttribute('aria-pressed', v); o.textContent = `🔊 自動唸出說明：${v ? '開' : '關'}`;
   }
   function startScenario(k) {
-    S.scn = k; S.cart = {}; S.pin = ''; S.amt = ''; S.locationSent = false; S.locAddr = ''; S.searchText = ''; S.chainInput = ''; S.zhuyinBuf = '';
+    S.scn = k; S.cart = {}; S.pin = ''; S.amt = ''; S.locationSent = false; S.locAddr = ''; S.searchText = ''; S.chainInput = ''; S.zhuyinBuf = ''; S.pasteMenuExpanded = false;
     el.start.hidden = true; el.practice.hidden = false; el.menuBtn.hidden = false;
     try { history.replaceState(null, '', '#' + k); } catch (e) { /* file:// */ }
     window.scrollTo(0, 0);
