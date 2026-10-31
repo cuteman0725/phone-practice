@@ -1,45 +1,91 @@
-# script.js - 腳本邏輯文件
+# script.js 說明文件
 
-## 檔案說明
+## 概述
 
-此檔案包含 LINE Pay 練習網站的所有互動邏輯，包括步驟控制、事件處理、語音朗讀等功能。
+這是手機練習網站的核心邏輯檔案，負責處理所有使用者互動、狀態管理和畫面渲染。
 
-## 系統架構圖
+## 情境流程圖
 
 ```mermaid
-graph TD
-    Main[主程式 IIFE] --> Utils[工具函數]
-    Main --> Data[資料定義]
-    Main --> Screens[畫面渲染]
-    Main --> Logic[業務邏輯]
-    Main --> Events[事件處理]
+flowchart TD
+    Start[開始頁面] --> SelectScenario{選擇情境}
     
-    Utils --> Dollar["$ 選擇器"]
-    Utils --> Store["localStorage 封裝"]
-    Utils --> Money[金額格式化]
-    Utils --> QRGen[QR 碼生成]
-    Utils --> Barcode[條碼生成]
+    SelectScenario -->|A| ScenA[情境 A: 餐廳掃碼點餐]
+    SelectScenario -->|B| ScenB[情境 B: 櫃台付款]
+    SelectScenario -->|C| ScenC[情境 C: 掃店家 QR 碼]
+    SelectScenario -->|D| ScenD[情境 D: 傳送我的位置]
+    SelectScenario -->|E| ScenE[情境 E: 傳送一個地址]
+    SelectScenario -->|F| ScenF[情境 F: 群組接龍留名字]
     
-    Data --> Menu[菜單資料]
-    Data --> Scenarios[情境定義]
-    Data --> State[狀態管理]
-    Data --> Icons[SVG 圖示]
+    ScenA --> PayFlow[付款流程]
+    ScenB --> PayFlow
+    ScenC --> PayFlow
     
-    Screens --> HomeScreen[手機主畫面]
-    Screens --> LineScreens[LINE 相關畫面]
-    Screens --> PayScreens[付款畫面]
+    ScenD --> LocationFlow[位置分享流程]
+    ScenE --> LocationFlow
     
-    Logic --> Navigation[步驟導航]
-    Logic --> Validation[操作驗證]
-    Logic --> Speech[語音朗讀]
-    Logic --> Toast[提示訊息]
+    ScenF --> ChainFlow[接龍流程]
     
-    Events --> Click[點擊事件]
-    Events --> Control[控制按鈕]
-    Events --> Settings[設定切換]
+    PayFlow --> Success[成功畫面]
+    LocationFlow --> Success
+    ChainFlow --> Success
+    
+    Success --> Restart{再次練習?}
+    Restart -->|是| SelectScenario
+    Restart -->|否| Start
 ```
 
-## 類別結構圖
+## 情境 F 詳細流程
+
+```mermaid
+sequenceDiagram
+    participant U as 使用者
+    participant S as 系統
+    participant G as 群組聊天
+    
+    U->>S: 開啟情境 F
+    S->>U: 顯示手機桌面
+    
+    U->>S: 點擊 LINE 圖示
+    S->>U: 顯示 LINE 主頁
+    
+    U->>S: 點擊「聊天」標籤
+    S->>U: 顯示聊天列表
+    
+    U->>S: 點擊「社區團購群」
+    S->>G: 進入群組聊天室
+    G->>U: 顯示忙碌對話與接龍訊息
+    
+    U->>G: 長按最新接龍訊息
+    G->>U: 顯示複製選單
+    
+    U->>G: 點擊「複製」
+    G->>S: 儲存接龍文字到 chainCopied
+    S->>U: 回到聊天室，顯示輸入框
+    
+    U->>S: 點擊輸入框
+    S->>U: 展開輸入框並顯示鍵盤
+    
+    U->>S: 長按輸入框
+    S->>U: 顯示貼上按鈕
+    
+    U->>S: 點擊「貼上」
+    S->>U: 接龍文字出現在輸入框
+    
+    U->>S: 點擊「11.」按鈕
+    S->>U: 新增「11. 」到輸入框
+    
+    U->>S: 點擊「小蓉」按鈕
+    S->>U: 新增「小蓉」到輸入框
+    
+    U->>S: 點擊傳送按鈕
+    S->>G: 新訊息加入群組
+    G->>U: 顯示包含「11. 小蓉」的新接龍訊息
+    
+    S->>U: 顯示成功畫面 🎉
+```
+
+## 狀態管理
 
 ```mermaid
 classDiagram
@@ -52,368 +98,296 @@ classDiagram
         +string pin
         +string amt
         +boolean busy
+        +boolean locationSent
+        +string locAddr
+        +string searchText
+        +string chainCopied
+        +boolean chainSent
     }
     
     class Scenario {
         +string name
-        +Step[] steps
+        +Array~Step~ steps
     }
     
     class Step {
         +string screen
         +string target
-        +string glow
-        +function say
-        +function check
-        +function enter
+        +string say
+        +function check()
+        +function enter()
         +number delay
         +boolean final
     }
     
-    class Screen {
-        +function home()
-        +function lineHome()
-        +function wallet()
-        +function payHome()
-        +function camera()
-        +function menu()
-        +function checkout()
-        +function confirm()
-        +function pin()
-        +function amount()
-        +function payCode()
-        +function success()
-    }
-    
-    class Actions {
-        +function add()
-        +function minus()
-        +function pin()
-        +function amt()
-    }
-    
-    State --> Scenario
-    Scenario --> Step
-    Screen ..> State
-    Actions ..> State
+    State "1" --> "0..1" Scenario : 當前情境
+    Scenario "1" --> "*" Step : 包含步驟
+    State --> Step : 當前步驟 idx
 ```
 
-## 執行流程圖
+## 畫面組件架構
 
 ```mermaid
-flowchart TD
-    Start[頁面載入] --> Init[初始化]
-    Init --> LoadState[載入儲存狀態]
-    LoadState --> BindEvents[綁定事件]
-    BindEvents --> CheckHash[檢查 URL Hash]
+graph TB
+    subgraph "核心畫面"
+        Home[home: 手機桌面]
+        LineHome[lineHome: LINE 主頁]
+        LineChat[lineChat: 聊天列表]
+        PayHome[payHome: LINE Pay 主頁]
+    end
     
-    CheckHash -->|有情境| StartScenario[開始情境]
-    CheckHash -->|無| ShowMenu[顯示選單]
+    subgraph "付款相關"
+        Menu[menu: 點菜畫面]
+        Checkout[checkout: 結帳確認]
+        Camera[camera*: 掃描畫面]
+        Confirm[confirm: 付款確認]
+        Pin[pin: 輸入密碼]
+        Amount[amount: 輸入金額]
+        PayCode[payCode: 付款碼]
+        Success[success: 成功畫面]
+    end
     
-    ShowMenu --> WaitUser[等待使用者選擇]
-    WaitUser --> SelectScenario[選擇情境]
-    SelectScenario --> StartScenario
+    subgraph "位置分享"
+        ChatRoom[chatRoom: 一般聊天室]
+        ChatMenu[chatMenu: 選單彈窗]
+        LocPerm[locationPermission: 權限請求]
+        LocMap[locationMap: 地圖畫面]
+        LocSearch[locationSearch: 地點搜尋]
+    end
     
-    StartScenario --> InitScenario[初始化情境]
-    InitScenario --> ShowStep[顯示步驟]
-    ShowStep --> ApplyGlow[套用發光效果]
-    ApplyGlow --> AutoSpeak{自動朗讀?}
+    subgraph "群組接龍 (新增)"
+        GroupChat[groupChat: 群組聊天室]
+        CopyMenu[copyMenu: 複製選單]
+        GroupInput[groupChatInput: 輸入框+鍵盤]
+    end
     
-    AutoSpeak -->|是| Speak[語音朗讀]
-    AutoSpeak -->|否| WaitClick
-    Speak --> WaitClick[等待點擊]
+    Home --> LineHome
+    LineHome --> LineChat
+    LineHome --> PayHome
+    LineChat --> ChatRoom
+    LineChat --> GroupChat
     
-    WaitClick --> UserClick[使用者點擊]
-    UserClick --> CheckTarget{檢查目標}
+    PayHome --> Camera
+    Menu --> Checkout
+    Checkout --> Confirm
+    Confirm --> Pin
+    Pin --> Success
     
-    CheckTarget -->|正確| Success[顯示成功]
-    CheckTarget -->|錯誤| Wrong[顯示錯誤提示]
+    ChatRoom --> ChatMenu
+    ChatMenu --> LocPerm
+    LocPerm --> LocMap
+    LocMap --> LocSearch
+    LocMap --> ChatRoom
     
-    Wrong --> WaitClick
-    Success --> CheckFinal{最後一步?}
-    
-    CheckFinal -->|否| NextStep[下一步]
-    CheckFinal -->|是| Complete[完成]
-    
-    NextStep --> ShowStep
-    Complete --> ShowDone[顯示完成畫面]
-    ShowDone --> WaitAction[等待再次操作]
-    
-    WaitAction -->|再練一次| StartScenario
-    WaitAction -->|練習別的| ShowMenu
-```
-
-## 狀態管理圖
-
-```mermaid
-stateDiagram-v2
-    [*] --> 初始化
-    初始化 --> 選單頁: 載入完成
-    
-    state 選單頁 {
-        [*] --> 等待選擇
-        等待選擇 --> 情境A: 點擊情境A
-        等待選擇 --> 情境B: 點擊情境B
-        等待選擇 --> 情境C: 點擊情境C
-    }
-    
-    選單頁 --> 練習中: 開始情境
-    
-    state 練習中 {
-        [*] --> 顯示步驟
-        顯示步驟 --> 等待操作
-        等待操作 --> 驗證操作
-        
-        驗證操作 --> 正確: 操作正確
-        驗證操作 --> 錯誤: 操作錯誤
-        
-        錯誤 --> 顯示提示
-        顯示提示 --> 等待操作
-        
-        正確 --> 檢查進度
-        檢查進度 --> 顯示步驟: 還有步驟
-        檢查進度 --> 完成: 全部完成
-    }
-    
-    練習中 --> 選單頁: 返回選單
-    完成 --> 練習中: 再練一次
-    完成 --> 選單頁: 練習別的
+    GroupChat --> CopyMenu
+    CopyMenu --> GroupInput
+    GroupInput --> GroupChat
 ```
 
 ## 事件處理流程
 
 ```mermaid
-sequenceDiagram
-    participant U as 使用者
-    participant D as DOM
-    participant E as 事件處理器
-    participant S as 狀態
-    participant R as 渲染器
-    
-    U->>D: 點擊元素
-    D->>E: 觸發 click 事件
-    E->>E: 檢查點擊目標
-    
-    alt 特殊操作 (add/minus/pin/amt)
-        E->>S: 更新狀態
-        S->>R: 重新渲染
-        R->>D: 更新 DOM
-    else 目標按鈕
-        E->>E: 驗證是否正確
-        alt 正確
-            E->>S: 設置 busy 狀態
-            E->>D: 顯示成功提示
-            Note over E: 延遲 250ms
-            E->>S: 增加 idx
-            S->>R: 渲染下一步
-        else 錯誤
-            E->>D: 顯示錯誤提示
-            E->>D: 暫時發光
-        end
-    else 其他區域
-        E->>D: 顯示通用提示
-    end
-    
-    R->>D: 更新完成
-    D->>U: 顯示新畫面
-```
-
-## 資料流向圖
-
-```mermaid
-graph LR
-    LocalStorage[(localStorage)] -->|載入| State[狀態物件 S]
-    State -->|hints| HintBtn[提示按鈕]
-    State -->|autoSpeak| SpeakBtn[朗讀按鈕]
-    State -->|cart| Menu[菜單顯示]
-    State -->|pin| PinDots[密碼點點]
-    State -->|amt| AmtDisplay[金額顯示]
-    
-    HintBtn -->|切換| State
-    SpeakBtn -->|切換| State
-    Menu -->|add/minus| State
-    PinDots -->|輸入| State
-    AmtDisplay -->|輸入| State
-    
-    State -->|儲存| LocalStorage
-    
-    style State fill:#e1f5e1
-    style LocalStorage fill:#fce4ec
-```
-
-## 語音朗讀流程
-
-```mermaid
 flowchart TD
-    Start[呼叫 speak] --> CheckSupport{支援語音?}
+    Click[使用者點擊] --> CheckScenario{有情境?}
+    CheckScenario -->|否| Ignore[忽略]
+    CheckScenario -->|是| CheckAction{是操作?}
     
-    CheckSupport -->|否| ShowError[顯示不支援訊息]
-    CheckSupport -->|是| GetText[取得說明文字]
+    CheckAction -->|是| Action[執行 ACTIONS]
+    CheckAction -->|否| CheckTarget{是目標?}
     
-    GetText --> CleanText[清除 HTML 標籤]
-    CleanText --> CreateUtterance[建立 SpeechSynthesisUtterance]
+    Action --> Render[重新渲染]
     
-    CreateUtterance --> CheckVoice{有中文語音?}
-    CheckVoice -->|是| SetVoice[設定中文語音]
-    CheckVoice -->|否| UseDefault[使用預設語音]
+    CheckTarget -->|是| CheckBusy{忙碌中?}
+    CheckTarget -->|否| CheckWrong{有錯誤訊息?}
     
-    SetVoice --> SetParams[設定參數]
-    UseDefault --> SetParams
+    CheckBusy -->|是| Ignore
+    CheckBusy -->|否| Success[成功處理]
     
-    SetParams --> CancelPrev[取消先前朗讀]
-    CancelPrev --> Speak[開始朗讀]
+    Success --> CheckDelay{有延遲?}
+    CheckDelay -->|是| ShowScanning[顯示掃描動畫]
+    CheckDelay -->|否| ShowToast[顯示提示]
     
-    Speak --> End[完成]
-    ShowError --> End
+    ShowScanning --> NextStep[下一步]
+    ShowToast --> NextStep
+    
+    CheckWrong -->|是| Wrong[顯示錯誤提示]
+    CheckWrong -->|否| CheckNeutral{中立區域?}
+    
+    CheckNeutral -->|是| Ignore
+    CheckNeutral -->|否| Wrong
+    
+    Wrong --> ApplyGlow{提示開啟?}
+    ApplyGlow -->|否| TempGlow[暫時發光 4 秒]
+    ApplyGlow -->|是| Ignore
 ```
 
-## QR 碼生成演算法
+## 資料結構
+
+### 配置常數
+
+```javascript
+// LINE Pay 付款情境
+const MENU = [餐點列表]
+const REST = '幸福小館'
+const SHOP_B = '好味便當'
+const SHOP_C = '巷口豆漿店'
+
+// 接龍情境配置（可修改）
+const CHAIN_USER_NAME = '小蓉'
+const CHAIN_INITIAL = '【團購】臺南愛文芒果 要的請接龍\n1. 美玲\n2. 阿芳\n...'
+```
+
+### 情境定義
+
+每個情境包含：
+- `name`: 情境名稱
+- `steps`: 步驟陣列
+
+每個步驟包含：
+- `screen`: 要顯示的畫面名稱
+- `target`: 正確的點擊目標 (data-t 屬性)
+- `say`: 指引文字（可以是函數）
+- `check`: 檢查函數（可選）
+- `enter`: 進入步驟時執行（可選）
+- `delay`: 延遲時間（可選）
+- `final`: 是否為最後一步（可選）
+
+## 核心函數
 
 ```mermaid
-flowchart TD
-    Start[fakeQR 函數] --> InitParams[初始化參數<br/>N=25, seed]
-    InitParams --> CreateRandom[建立偽隨機函數]
-    CreateRandom --> GenFinder[生成定位圖案]
+classDiagram
+    class RenderSystem {
+        +render(keepScroll)
+        +applyGlow(on)
+    }
     
-    GenFinder --> LoopStart{遍歷 25x25}
-    LoopStart --> CheckPos{在定位圖案內?}
+    class NavigationSystem {
+        +go(index)
+        +next()
+        +success()
+        +wrong(target)
+    }
     
-    CheckPos -->|是| Skip[跳過]
-    CheckPos -->|否| RandCheck{random > 0.52?}
+    class ActionSystem {
+        +add(button)
+        +minus(button)
+        +pin(button)
+        +amt(button)
+        +type(button)
+    }
     
-    RandCheck -->|是| AddRect[加入黑色方塊]
-    RandCheck -->|否| Skip
+    class UISystem {
+        +toast(msg, good)
+        +speak()
+    }
     
-    AddRect --> LoopStart
-    Skip --> LoopStart
+    class ScenarioSystem {
+        +startScenario(key)
+        +step()
+        +steps()
+    }
     
-    LoopStart -->|完成| BuildSVG[組合 SVG]
-    BuildSVG --> Return[返回 SVG 字串]
+    RenderSystem --> ScenarioSystem
+    NavigationSystem --> RenderSystem
+    NavigationSystem --> UISystem
+    ActionSystem --> RenderSystem
 ```
 
-## 購物車邏輯
+## 群組接龍特殊邏輯
+
+### 複製貼上機制
 
 ```mermaid
 stateDiagram-v2
-    [*] --> 空購物車
+    [*] --> 群組聊天: 進入群組
     
-    空購物車 --> 有商品: add(商品)
-    有商品 --> 有商品: add(商品)
-    有商品 --> 有商品: minus(商品)
-    有商品 --> 空購物車: minus(最後商品)
+    群組聊天 --> 長按訊息: 長按最新接龍
+    長按訊息 --> 複製選單: 顯示選單
+    複製選單 --> 已複製: 點擊「複製」
     
-    state 有商品 {
-        [*] --> 計算總數
-        計算總數 --> 顯示總額
-        顯示總額 --> 啟用結帳
-    }
+    已複製 --> 輸入框: chainCopied = CHAIN_INITIAL
+    輸入框 --> 長按輸入框: 展開鍵盤
+    長按輸入框 --> 貼上: 顯示貼上按鈕
     
-    state 空購物車 {
-        [*] --> 總額為0
-        總額為0 --> 停用結帳
-    }
+    貼上 --> 輸入中: 文字出現在輸入框
+    輸入中 --> 輸入序號: 點擊「11.」
+    輸入序號 --> 輸入名字: chainCopied += "11. "
+    
+    輸入名字 --> 完成輸入: 點擊「小蓉」
+    完成輸入 --> 傳送: chainCopied += "小蓉"
+    
+    傳送 --> 群組聊天: chainSent = true
+    群組聊天 --> 成功: 顯示新訊息
+    成功 --> [*]
 ```
 
-## PIN 碼輸入流程
+## 響應式設計
 
-```mermaid
-sequenceDiagram
-    participant U as 使用者
-    participant K as 鍵盤
-    participant S as 狀態
-    participant D as 顯示
-    participant N as 導航
-    
-    Note over S: pin = ""
-    
-    loop 輸入 PIN
-        U->>K: 按數字鍵
-        K->>S: pin += digit
-        S->>D: 更新點點顯示
-        D->>U: 顯示填充點點
-    end
-    
-    S->>S: 檢查長度
-    
-    alt pin.length < 6
-        Note over S: 繼續等待輸入
-    else pin.length === 6
-        S->>S: 設置 busy
-        S->>D: 顯示成功提示
-        Note over S: 延遲 700ms
-        S->>N: 進入下一步
-        N->>D: 顯示下個畫面
-    end
-```
-
-## 錯誤處理機制
-
-```mermaid
-graph TD
-    Error[使用者點擊錯誤] --> CheckWrong{有 data-wrong?}
-    
-    CheckWrong -->|是| ShowCustom[顯示自訂訊息]
-    CheckWrong -->|否| ShowDefault[顯示預設訊息]
-    
-    ShowCustom --> CheckHints{提示開啟?}
-    ShowDefault --> CheckHints
-    
-    CheckHints -->|是| Already[已顯示發光]
-    CheckHints -->|否| TempGlow[暫時發光 4 秒]
-    
-    TempGlow --> Toast[顯示 Toast]
-    Already --> Toast
-    
-    Toast --> Wait[等待 3.5 秒]
-    Wait --> Hide[隱藏 Toast]
-```
-
-## 關鍵函數說明
-
-### render()
-渲染當前步驟，更新所有 UI 元素
+### 行動端適配
 
 ```mermaid
 graph LR
-    render --> GetStep[取得當前步驟]
-    GetStep --> UpdateScreen[更新畫面內容]
-    UpdateScreen --> UpdateProgress[更新進度條]
-    UpdateProgress --> UpdateInstr[更新說明文字]
-    UpdateInstr --> ApplyGlow[套用發光效果]
+    Desktop[桌面版<br/>max-width > 600px] -->|顯示| Full[完整模擬手機<br/>含狀態列/導航列<br/>圓角邊框]
+    Mobile[行動版<br/>max-width ≤ 600px] -->|隱藏| Mini[全螢幕顯示<br/>移除狀態列/導航列<br/>無圓角]
+    
+    Full --> Layout1[固定尺寸<br/>aspect-ratio 9/19.5]
+    Mini --> Layout2[100dvh flexbox<br/>topbar + practice flex]
 ```
 
-### go(index)
-導航到指定步驟
+### 布局結構
 
 ```mermaid
-graph LR
-    go --> ClampIndex[限制索引範圍]
-    ClampIndex --> RunEnter[執行 enter 函數]
-    RunEnter --> ClearBusy[清除忙碌狀態]
-    ClearBusy --> Render[渲染畫面]
-    Render --> CheckAutoSpeak{自動朗讀?}
-    CheckAutoSpeak -->|是| Speak[朗讀]
-    CheckAutoSpeak -->|否| End[完成]
+graph TB
+    Body[body: flex column 100dvh]
+    Body --> TopBar[.topbar: flex 0 0 auto 32px]
+    Body --> Start[.start: flex 1 auto]
+    Body --> Practice[.practice: flex 1 auto]
+    
+    Practice --> Guide[.guide: flex 0 0 auto]
+    Practice --> PhoneWrap[.phone-wrap: flex 1 minmax 0]
+    Practice --> Controls[.controls: flex 0 0 auto 48px]
+    
+    PhoneWrap --> Phone[.phone 100% 高度]
+    Phone --> Screen[.screen 畫面內容]
+    
+    Screen --> Scroll[.scroll 可捲動區域]
 ```
 
-### success()
-處理正確操作
+## 修改指南
 
-```mermaid
-graph LR
-    success --> CheckBusy{正在處理?}
-    CheckBusy -->|是| Return[直接返回]
-    CheckBusy -->|否| Validate[驗證條件]
-    Validate --> CheckDelay{有延遲?}
-    CheckDelay -->|是| ShowScanning[顯示掃描動畫]
-    CheckDelay -->|否| ShowToast[顯示成功提示]
-    ShowScanning --> Next[下一步]
-    ShowToast --> Next
+### 如何新增情境
+
+1. 在 `SCENARIOS` 物件中新增情境定義
+2. 定義 `steps` 陣列，每步包含 `screen`、`target`、`say`
+3. 在 `SCREENS` 物件中實作需要的畫面函數
+4. 在 `index.html` 中新增情境卡片
+5. 更新 `README.md` 文件
+
+### 如何修改使用者名稱
+
+只需修改一個常數：
+
+```javascript
+const CHAIN_USER_NAME = '您的名字';
 ```
 
-## 效能優化
+### 如何調整接龍初始內容
 
-- 使用事件委派 (Event Delegation)
-- 最小化 DOM 操作
-- 適當使用 debounce (localStorage)
-- 避免記憶體洩漏 (取消語音)
+修改 `CHAIN_INITIAL` 常數：
+
+```javascript
+const CHAIN_INITIAL = [
+  '【團購】您的商品名稱',
+  '1. 名字一',
+  '2. 名字二',
+  // ... 更多名字
+].join('\n');
+```
+
+## 維護注意事項
+
+1. **無捲軸保證**：確保所有步驟在 360×640、390×700、412×760、1280×800 視窗都能完整顯示
+2. **提示機制**：所有可點擊元素都要有 `data-t`（正確）或 `data-wrong`（錯誤）屬性
+3. **語音朗讀**：`say` 文字要避免 HTML 標籤，使用 `plain()` 函數清理
+4. **狀態重置**：新增情境時記得在 `startScenario()` 中重置相關狀態
+5. **行動端優先**：先確保行動端正確，再考慮桌面版顯示
