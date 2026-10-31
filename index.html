@@ -4,21 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b8f3e">
-<meta name="description" content="給長輩的手機付款練習:模擬 Android 手機上用 LINE Pay 在餐廳點餐、付款。練習用模擬畫面,不會真的付款。">
-<title>手機付款練習(練習用模擬畫面)</title>
+<meta name="description" content="給長輩的手機練習:模擬 Android 手機上用 LINE Pay 付款、分享位置。練習用模擬畫面,不會真的付款或傳送資料。">
+<title>手機練習(練習用模擬畫面)</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">📱 手機付款練習</div>
-  <div class="badge" role="note">練習用模擬畫面,不會真的付款</div>
+  <div class="brand">📱 手機練習</div>
+  <div class="badge" role="note">練習用模擬畫面,不會真的操作</div>
   <button class="menu-btn" id="btnMenu" hidden>回選單</button>
 </header>
 
 <!-- 選擇練習 -->
 <main id="start" class="start">
-  <h1>跟著做,學會用手機付錢</h1>
+  <h1>跟著做,學會用手機</h1>
   <p class="lead">請選一個想練習的情況。每一步都會告訴你要按哪裡,<b>會發亮的地方</b>就是要按的地方。可以一直重複練習,按錯也沒關係。</p>
+  <div class="section-title">💳 付款練習</div>
   <div class="cards">
     <button class="card" data-scn="A">
       <span class="card-emoji" aria-hidden="true">🍜</span>
@@ -31,6 +32,17 @@
     <button class="card" data-scn="C">
       <span class="card-emoji" aria-hidden="true">📷</span>
       <span class="card-txt"><b>掃店家的 QR 碼付款</b><small>自己掃櫃台的 QR 碼,輸入金額</small></span>
+    </button>
+  </div>
+  <div class="section-title">📍 位置分享練習</div>
+  <div class="cards">
+    <button class="card" data-scn="D">
+      <span class="card-emoji" aria-hidden="true">📍</span>
+      <span class="card-txt"><b>傳送我現在的位置</b><small>在 LINE 聊天中分享目前所在位置</small></span>
+    </button>
+    <button class="card" data-scn="E">
+      <span class="card-emoji" aria-hidden="true">🗺️</span>
+      <span class="card-txt"><b>傳送一個地址</b><small>在 LINE 聊天中分享指定地點</small></span>
     </button>
   </div>
   <div class="settings">
