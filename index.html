@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b8f3e">
+<meta name="description" content="給長輩的手機付款練習:模擬 Android 手機上用 LINE Pay 在餐廳點餐、付款。練習用模擬畫面,不會真的付款。">
+<title>手機付款練習(練習用模擬畫面)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">📱 手機付款練習</div>
+  <div class="badge" role="note">練習用模擬畫面,不會真的付款</div>
+  <button class="menu-btn" id="btnMenu" hidden>回選單</button>
+</header>
+
+<!-- 選擇練習 -->
+<main id="start" class="start">
+  <h1>跟著做,學會用手機付錢</h1>
+  <p class="lead">請選一個想練習的情況。每一步都會告訴你要按哪裡,<b>會發亮的地方</b>就是要按的地方。可以一直重複練習,按錯也沒關係。</p>
+  <div class="cards">
+    <button class="card" data-scn="A">
+      <span class="card-emoji" aria-hidden="true">🍜</span>
+      <span class="card-txt"><b>在餐廳掃碼點餐</b><small>掃桌上的 QR 碼,點菜,再用 LINE Pay 付錢</small></span>
+    </button>
+    <button class="card" data-scn="B">
+      <span class="card-emoji" aria-hidden="true">🧾</span>
+      <span class="card-txt"><b>在櫃台付款</b><small>打開付款碼,給店員掃描</small></span>
+    </button>
+    <button class="card" data-scn="C">
+      <span class="card-emoji" aria-hidden="true">📷</span>
+      <span class="card-txt"><b>掃店家的 QR 碼付款</b><small>自己掃櫃台的 QR 碼,輸入金額</small></span>
+    </button>
+  </div>
+  <div class="settings">
+    <button class="toggle" id="optSpeak" aria-pressed="false">🔊 自動唸出說明:關</button>
+    <button class="toggle" id="optHint" aria-pressed="true">💡 提示:開</button>
+  </div>
+  <div class="safety">
+    <p>✅ 這是<b>練習用的假畫面</b>,不會真的付錢,也不會傳送任何資料。</p>
+    <p>🔒 真正付款時,<b>密碼不要告訴任何人</b>。有人打電話要你操作付款,先掛掉問家人。</p>
+  </div>
+</main>
+
+<!-- 練習畫面 -->
+<main id="practice" class="practice" hidden>
+  <section class="guide" aria-live="polite">
+    <div class="prog-row"><span id="progress" class="progress">第 1 步 / 共 1 步</span><span id="scnName" class="scn-name"></span></div>
+    <div class="bar"><div id="bar"></div></div>
+    <p id="instr" class="instr"></p>
+    <div id="done" class="done" hidden>
+      <button class="big-btn green" id="btnAgain">🔁 再練一次</button>
+      <button class="big-btn" id="btnOther">📋 練習別的</button>
+    </div>
+  </section>
+
+  <section class="phone-wrap">
+    <div class="phone" id="phone">
+      <div class="statusbar" aria-hidden="true">
+        <span id="sbTime">10:30</span>
+        <span class="sb-right">
+          <svg viewBox="0 0 20 14" width="20" height="14"><rect x="1" y="9" width="3" height="4" fill="currentColor"/><rect x="6" y="6" width="3" height="7" fill="currentColor"/><rect x="11" y="3" width="3" height="10" fill="currentColor"/><rect x="16" y="0" width="3" height="13" fill="currentColor"/></svg>
+          5G
+          <svg viewBox="0 0 26 14" width="26" height="14"><rect x="1" y="1" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="4" width="14" height="6" fill="currentColor"/><rect x="23" y="5" width="2" height="4" fill="currentColor"/></svg>
+          85%
+        </span>
+      </div>
+      <div class="screen" id="screen"></div>
+      <div id="toast" class="toast" role="status" hidden></div>
+      <div class="navbar" aria-hidden="true">
+        <span class="nav-btn" data-wrong="練習時先不用按這裡喔。">◁</span>
+        <span class="nav-btn" data-wrong="練習時先不用按這裡喔。">○</span>
+        <span class="nav-btn" data-wrong="練習時先不用按這裡喔。">□</span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="controls">
+    <button id="btnPrev">⬅️<br>上一步</button>
+    <button id="btnRestart">🔁<br>從頭再練一次</button>
+    <button id="btnHint" aria-pressed="true">💡<br>提示:開</button>
+    <button id="btnSpeak">🔊<br>唸給我聽</button>
+  </nav>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
