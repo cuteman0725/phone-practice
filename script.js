@@ -766,29 +766,6 @@
       { screen: 'groupChatComplete', target: 'send-btn', say: '名字輸入完成了！請按<span class="em">右側的傳送按鈕</span>（紙飛機）。' },
       { screen: 'groupChatSent', final: true, say: '🎉 太棒了！你的名字已經加到接龍裡，傳送到群組了！' }
     ] }
-      { screen: 'lineHome', target: 'chat-tab', say: '打開 LINE 了！請按<span class="em">下方的「聊天」</span>。' },
-      { screen: 'lineChat', target: 'open-chat', say: '這是聊天列表。請按<span class="em">「社區團購群」</span>打開群組。' },
-      { screen: 'groupChat', target: 'long-press-chain', 
-        say: '群組裡有團購接龍訊息（一串名字）。請<span class="em">長按最下面最新的</span>接龍訊息。' },
-      { screen: 'copyMenu', target: 'copy-text', say: '出現選單了！請按<span class="em">「複製」</span>。' },
-      { screen: 'groupChatInput', target: 'paste-box', 
-        say: '回到聊天室了。請按<span class="em">輸入框</span>（白色的地方）。' },
-      { screen: 'groupChatInput', target: 'long-press-input', 
-        say: '輸入框變大了，下面有鍵盤。請<span class="em">長按輸入框</span>（白色的地方）。' },
-      { screen: 'groupChatInput', target: 'paste-btn', enter() { S.chainCopied = ''; },
-        say: '鍵盤上有「貼上」按鈕。請按<span class="em">「貼上」</span>。' },
-      { screen: 'groupChatInput', target: 'newline-btn', enter() { S.chainCopied = CHAIN_INITIAL; },
-        say: '貼上成功！接龍訊息出現了。現在按<span class="em">鍵盤右下角的「換行」鍵</span>，讓游標跳到下一行。' },
-      { screen: 'groupChatInput', target: 'type-number', enter() { S.chainCopied = CHAIN_INITIAL + '\n'; },
-        say: '游標跳到新的一行了！現在按<span class="em">「11.」</span>。' },
-      { screen: 'groupChatInput', target: 'type-name', enter() { S.chainCopied = CHAIN_INITIAL + '\n11. '; },
-        say: '序號加好了！現在按<span class="em">「' + CHAIN_USER_NAME + '」</span>加上你的名字。' },
-      { screen: 'groupChatInput', target: 'send-chain', 
-        enter() { S.chainCopied = CHAIN_INITIAL + '\n11. ' + CHAIN_USER_NAME; },
-        say: '名字加好了！請按<span class="em">右邊的傳送按鈕</span>。' },
-      { screen: 'groupChat', final: true, enter() { S.chainSent = true; },
-        say: '🎉 太棒了！你的名字已經加到接龍裡，傳送到群組了！' }
-    ] }
   };
 
   const steps = () => SCENARIOS[S.scn].steps;
