@@ -1,0 +1,23 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "給長輩練習「用 Android 手機的 LINE Pay 付錢、分享位置」的網站。 **這是練習用模擬畫面，不會真的付款或傳送資料**：完全不連網路、不收集任何資料，密碼隨便按都可以。",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuteman0725/phone-practice.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cuteman0725/phone-practice/issues"
+  },
+  "homepage": "https://github.com/cuteman0725/phone-practice#readme",
+  "devDependencies": {
+    "playwright": "^1.64.1"
+  }
+}

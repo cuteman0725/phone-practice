@@ -29,7 +29,56 @@
   }
 
   // ---------- 圖示（自己畫的通用圖示，不是官方商標） ----------
+  function gboardZhuyin(mode) {
+    const canEnter = mode === 'pasted';
+    const kb = (k, t) => `<button class="gb-key" ${t ? `data-t="${t}"` : 'data-wrong="這個鍵現在不用按。請看指示。"'}>${k}</button>`;
+    const enter = canEnter ? `<button class="gb-key gb-enter" data-t="enter-key">換行<br>↵</button>` : `<button class="gb-key gb-enter" data-wrong="還沒貼上喔。">換行<br>↵</button>`;
+    const sw123 = mode === 'newline' ? `<button class="gb-key gb-sw" data-t="switch-123">符號<br>123</button>` : `<button class="gb-key gb-sw" data-wrong="還不用切換。">符號<br>123</button>`;
+    return `<div class="gboard">
+      <div class="gb-row">${kb('ㄅ')}${kb('ㄆ')}${kb('ㄇ')}${kb('ㄈ')}${kb('ㄉ')}${kb('ㄊ')}${kb('ㄋ')}${kb('ㄌ')}${kb('ㄍ')}${kb('ㄎ')}</div>
+      <div class="gb-row">${kb('ㄏ')}${kb('ㄐ')}${kb('ㄑ')}${kb('ㄒ')}${kb('ㄓ')}${kb('ㄔ')}${kb('ㄕ')}${kb('ㄖ')}${kb('ㄗ')}${kb('ㄘ')}</div>
+      <div class="gb-row">${kb('ㄙ')}${kb('ㄧ')}${kb('ㄨ')}${kb('ㄩ')}${kb('ㄚ')}${kb('ㄛ')}${kb('ㄜ')}${kb('ㄝ')}${kb('ㄞ')}${kb('ㄟ')}</div>
+      <div class="gb-row">${sw123}${kb('ㄠ')}${kb('ㄡ')}${kb('ㄢ')}${kb('ㄣ')}${kb('ㄤ')}${kb('ㄥ')}${kb('ㄦ')}${kb('ˊ')}${kb('ˇ')}${kb('ˋ')}<button class="gb-key gb-del" data-wrong="還不用刪除。">⌫</button></div>
+      <div class="gb-row"><button class="gb-key gb-space" data-wrong="還不用空白。">空白鍵</button>${enter}</div>
+    </div>`;
+  }
+  function gboardNum() {
+    const kb = (k, act) => `<button class="gb-key" data-act="${act}" data-v="${k}">${k}</button>`;
+    const numKeys = '1234567890'.split('').map(n => kb(n, 'input')).join('');
+    return `<div class="gboard">
+      <div class="gb-row">${numKeys}</div>
+      <div class="gb-row">${kb('.', 'input')}${kb(',', 'input')}${kb('?', 'input')}${kb('!', 'input')}</div>
+      <div class="gb-row"><button class="gb-key gb-sw" data-act="switch-zh">中文</button><button class="gb-key gb-space">空白鍵</button><button class="gb-key gb-del">⌫</button></div>
+    </div>`;
+  }
+  function gboardZhuyinWithCand(which, cand) {
+    const keys = which === 'xiao' ? CHAIN_USER_NAME_ZHUYIN[0].keys : CHAIN_USER_NAME_ZHUYIN[1].keys;
+    const target = which === 'xiao' ? 'type-xiao' : 'type-rong';
+    const char = which === 'xiao' ? '小' : '蓉';
+    const kb = (k, isTarget) => `<button class="gb-key" ${isTarget ? `data-act="zhuyin" data-v="${k}"` : 'data-wrong="請按指示的注音鍵。"'}>${k}</button>`;
+    const candBtn = (c, isTarget) => `<button class="gb-cand" ${isTarget ? `data-t="${target}" data-v="${c}"` : 'data-wrong="請選正確的字。"'}>${c}</button>`;
+    const zhuyinKeys = 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦˊˇˋ'.split('');
+    const row1 = zhuyinKeys.slice(0,10).map(k => kb(k, keys.includes(k))).join('');
+    const row2 = zhuyinKeys.slice(10,20).map(k => kb(k, keys.includes(k))).join('');
+    const row3 = zhuyinKeys.slice(20,30).map(k => kb(k, keys.includes(k))).join('');
+    const row4 = `<button class="gb-key gb-sw">符號</button>${zhuyinKeys.slice(30,38).map(k => kb(k, keys.includes(k))).join('')}${zhuyinKeys.slice(38).map(k => kb(k, keys.includes(k))).join('')}<button class="gb-key gb-del">⌫</button>`;
+    return `<div class="gboard">
+      ${cand.length ? `<div class="gb-cand-bar">${cand.map(c => candBtn(c, c === char)).join('')}</div>` : ''}
+      <div class="gb-row">${row1}</div>
+      <div class="gb-row">${row2}</div>
+      <div class="gb-row">${row3}</div>
+      <div class="gb-row">${row4}</div>
+      <div class="gb-row"><button class="gb-key gb-space">空白鍵</button><button class="gb-key gb-enter">換行 ↵</button></div>
+    </div>`;
+  }
+
   const I = {
+    reply: '<svg viewBox="0 0 24 24"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>',
+    copy: '<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>',
+    forward: '<svg viewBox="0 0 24 24"><path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>',
+    keep: '<svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
+    screenshot: '<svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM17 19H7V5h10v14z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
     chat: '<svg viewBox="0 0 40 40"><ellipse cx="20" cy="18" rx="15" ry="12" fill="#fff"/><path d="M12 27 L10 35 L19 29Z" fill="#fff"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11 11 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.6 3.6a1 1 0 0 1-.25 1z"/></svg>',
     msg: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z"/></svg>',
@@ -71,6 +120,10 @@
   
   // 接龍配置（可輕鬆修改）
   const CHAIN_USER_NAME = '小蓉';
+  const CHAIN_USER_NAME_ZHUYIN = [
+    { keys: ['ㄒ', 'ㄧ', 'ㄠ', 'ˇ'], char: '小' },
+    { keys: ['ㄖ', 'ㄨ', 'ㄥ', 'ˊ'], char: '蓉' }
+  ];
   const CHAIN_INITIAL = [
     '【團購】臺南愛文芒果 要的請接龍',
     '1. 美玲',
@@ -85,7 +138,7 @@
     '10. 家豪'
   ].join('\n');
 
-  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false, locationSent: false, locAddr: '', searchText: '', chainCopied: '', chainSent: false };
+  const S = { scn: null, idx: 0, hints: store.get('hints', true), autoSpeak: store.get('autoSpeak', false), cart: {}, pin: '', amt: '', busy: false, locationSent: false, locAddr: '', searchText: '', chainInput: '', zhuyinBuf: '', candidateIdx: 0, showKeyboard: false };
 
   const cartTotal = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0) * m.price, 0);
   const cartCount = () => MENU.reduce((t, m) => t + (S.cart[m.id] || 0), 0);
@@ -143,20 +196,197 @@
 
     lineChat: () => {
       const st = step();
-      const isGroupBuy = S.scn === 'F';
-      const targetChat = isGroupBuy ? '社區團購群' : '家人群組';
-      const ch = (n, msg, t, c, target) => `<button class="chat-item" ${target ? 'data-t="open-chat"' : `data-wrong="這不是我們要開的聊天喔。請按「${targetChat}」。"`}><span class="avatar" style="background:${c}">${n[0]}</span><div class="chat-info"><div class="chat-name">${n}</div><div class="chat-msg">${msg}</div></div><div class="chat-time">${t}</div></button>`;
+      const isGroup = S.scn === 'F';
+      const target = isGroup ? 'open-group' : 'open-chat';
+      const targetName = isGroup ? '社區團購群' : '家人群組';
+      const ch = (n, msg, t, c, isTarget) => `<button class="chat-item" ${isTarget ? `data-t="${target}"` : `data-wrong="這不是我們要開的聊天。請按「${targetName}」。"`}><span class="avatar" style="background:${c}">${n[0]}</span><div class="chat-info"><div class="chat-name">${n}</div><div class="chat-msg">${msg}</div></div><div class="chat-time">${t}</div></button>`;
       return `<div class="scr lhome">
         <div class="appbar"><span>聊天</span></div>
         <div class="scroll">
-          <div class="search-in" data-wrong="這是搜尋。請按下面的「${targetChat}」。">🔍 搜尋</div>
-          ${isGroupBuy ? ch('社區團購群 (48)', '家豪：【團購】臺南愛文芒果...', '09:35', '#ff9800', true) : ''}
-          ${ch('家人群組', '兒子 建錩：週末回家', '10:15', '#ffa726', !isGroupBuy)}
+          <div class="search-in" data-wrong="這是搜尋。請按下面的「${targetName}」。">🔍 搜尋</div>
+          ${isGroup ? ch('社區團購群 (48)', '家豪：【團購】臺南愛文芒果...', '09:35', '#ff9800', true) : ''}
+          ${ch('家人群組', '兒子 建錩：週末回家', '10:15', '#ffa726', !isGroup)}
           ${ch('女兒 小美', '媽，記得吃飯喔！', '昨天', '#ec407a', false)}
           ${ch('同學會', '(5 人)', '週三', '#7e57c2', false)}
-          ${ch('社區管理員', '繳費通知', '週一', '#66bb6a', false)}
         </div>
-        <div class="tabs"><button class="tab" data-wrong="這是「主頁」。我們在「聊天」這裡。">${I.t_home}<span>主頁</span></button><button class="tab on">${I.t_chat}<span>聊天</span></button><button class="tab" data-wrong="這是「貼文串」。我們在「聊天」這裡。">${I.t_post}<span>貼文串</span></button><button class="tab" data-wrong="這是「新聞」。我們在「聊天」這裡。">${I.t_news}<span>新聞</span></button><button class="tab" data-wrong="這是「錢包」。我們在「聊天」這裡。">${I.t_wallet}<span>錢包</span></button></div>
+        <div class="tabs"><button class="tab" data-wrong="這是「主頁」。">${I.t_home}<span>主頁</span></button><button class="tab on">${I.t_chat}<span>聊天</span></button><button class="tab" data-wrong="這是「貼文串」。">${I.t_post}<span>貼文串</span></button><button class="tab" data-wrong="這是「新聞」。">${I.t_news}<span>新聞</span></button><button class="tab" data-wrong="這是「錢包」。">${I.t_wallet}<span>錢包</span></button></div>
+      </div>`;
+    },
+
+    groupChat: () => {
+      const msg = (txt, isMe, time) => `<div class="msg ${isMe ? 'msg-me' : 'msg-other'}"><div class="msg-bubble">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const chainMsg = (txt, time, canPress) => `<div class="msg msg-other" ${canPress ? 'data-t="long-press-msg"' : 'data-wrong="這是舊的接龍。請長按<b>最下面最新的</b>。"'}><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll">
+          ${msg('大家好，這週有愛文芒果團購', false, '09:15')}
+          ${chainMsg(CHAIN_INITIAL.split('\n').slice(0, 6).join('\n'), '09:16', false)}
+          ${msg('我要一箱！', false, '09:20')}
+          ${chainMsg(CHAIN_INITIAL.split('\n').slice(0, 9).join('\n'), '09:25', false)}
+          ${msg('還有名額嗎？', false, '09:30')}
+          ${chainMsg(CHAIN_INITIAL, '09:35', true)}
+        </div>
+        <div class="chat-input-bar">
+          <button class="chat-plus" data-wrong="不用 ＋。請<b>長按</b>最下面的接龍訊息。">${I.plus}</button>
+          <div class="chat-input" data-wrong="先長按上面的接龍訊息。">輸入訊息</div>
+          <button class="chat-send" data-wrong="還沒輸入。請先長按上面的接龍訊息。">${I.send}</button>
+        </div>
+      </div>`;
+    },
+
+    lineLongPress: () => `<div class="scr line-menu">
+      <div class="menu-overlay" data-wrong="請按下面選單的「複製」。"></div>
+      <div class="line-menu-popup">
+        <button class="line-menu-item" data-wrong="這是「回覆」。我們要按「複製」。">${I.reply}<span>回覆</span></button>
+        <button class="line-menu-item" data-t="copy-item">${I.copy}<span>複製</span></button>
+        <button class="line-menu-item" data-wrong="這是「轉傳」。我們要按「複製」。">${I.forward}<span>轉傳</span></button>
+        <button class="line-menu-item" data-wrong="這是「Keep」。我們要按「複製」。">${I.keep}<span>Keep</span></button>
+        <button class="line-menu-item" data-wrong="這是「截圖」。我們要按「複製」。">${I.screenshot}<span>截圖</span></button>
+        <button class="line-menu-item" data-wrong="這是「刪除」。我們要按「複製」。">${I.trash}<span>刪除</span></button>
+      </div>
+    </div>`,
+
+    groupChatCopied: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar">
+          <button class="chat-plus" data-wrong="不用 ＋。請按下面的輸入框。">${I.plus}</button>
+          <div class="chat-input" data-t="input-box">輸入訊息</div>
+          <button class="chat-send" data-wrong="還沒輸入。請先按輸入框。">${I.send}</button>
+        </div>
+        <div class="toast-copied">已複製</div>
+      </div>`;
+    },
+
+    groupChatKeyboard: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-focus" data-t="long-press-input"><span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入。">${I.send}</button>
+        </div>
+        ${gboardZhuyin('initial')}
+      </div>`;
+    },
+
+    androidPaste: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-focus"><span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒貼上。">${I.send}</button>
+        </div>
+        <div class="paste-popup" data-t="paste-popup">貼上</div>
+        ${gboardZhuyin('initial')}
+      </div>`;
+    },
+
+    groupChatPasted: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
+        </div>
+        ${gboardZhuyin('pasted')}
+      </div>`;
+    },
+
+    groupChatNewline: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL + '\n';
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
+        </div>
+        ${gboardZhuyin('newline')}
+      </div>`;
+    },
+
+    groupChatNum: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL + '\n' + S.chainInput;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
+        </div>
+        ${gboardNum()}
+      </div>`;
+    },
+
+    groupChatZhuyin1: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL + '\n' + S.chainInput + S.zhuyinBuf;
+      const cand = S.zhuyinBuf ? ['小', '笑', '曉'] : [];
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
+        </div>
+        ${gboardZhuyinWithCand('xiao', cand)}
+      </div>`;
+    },
+
+    groupChatZhuyin2: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL + '\n' + S.chainInput + S.zhuyinBuf;
+      const cand = S.zhuyinBuf ? ['蓉', '榮', '容'] : [];
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}<span class="cursor-blink">|</span></div>
+          <button class="input-send-btn" data-wrong="還沒輸入完。">${I.send}</button>
+        </div>
+        ${gboardZhuyinWithCand('rong', cand)}
+      </div>`;
+    },
+
+    groupChatComplete: () => {
+      const msg = (txt, time) => `<div class="msg msg-other"><div class="msg-bubble chain-msg">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const input = CHAIN_INITIAL + '\n' + S.chainInput;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll scroll-kb">${msg(CHAIN_INITIAL, '09:35')}</div>
+        <div class="chat-input-bar-expanded">
+          <div class="input-box-text">${input.replace(/\n/g, '<br>')}</div>
+          <button class="input-send-btn" data-t="send-btn">${I.send}</button>
+        </div>
+        ${gboardZhuyin('complete')}
+      </div>`;
+    },
+
+    groupChatSent: () => {
+      const msg = (txt, isMe, time) => `<div class="msg ${isMe ? 'msg-me' : 'msg-other'}"><div class="msg-bubble${isMe ? '' : ' chain-msg'}">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
+      const newChain = CHAIN_INITIAL + '\n11. ' + CHAIN_USER_NAME;
+      return `<div class="scr chat-room">
+        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
+        <div class="scroll">
+          ${msg(CHAIN_INITIAL, false, '09:35')}
+          ${msg(newChain, true, '現在')}
+        </div>
+        <div class="chat-input-bar">
+          <button class="chat-plus">${I.plus}</button>
+          <div class="chat-input">輸入訊息</div>
+          <button class="chat-send">${I.send}</button>
+        </div>
       </div>`;
     },
 
@@ -241,55 +471,6 @@
         </div>
       </div>`;
     },
-
-    groupChat: () => {
-      const st = step();
-      const msg = (txt, isMe, time, longPress) => {
-        const attr = longPress && st.target === 'long-press-chain' ? 'data-t="long-press-chain"' : 
-                     longPress ? 'data-wrong="這是舊的接龍訊息。請長按<b>最下面最新的</b>接龍訊息。"' : 
-                     'data-wrong="這是一般訊息，不是接龍。請找最下面的接龍訊息。"';
-        return `<div class="msg ${isMe ? 'msg-me' : 'msg-other'}" ${attr}><div class="msg-bubble${longPress ? ' chain-msg' : ''}">${txt.replace(/\n/g, '<br>')}</div><div class="msg-time">${time}</div></div>`;
-      };
-      
-      // 舊的接龍訊息
-      const oldChain1 = CHAIN_INITIAL.split('\n').slice(0, 6).join('\n'); // 只有 1-5
-      const oldChain2 = CHAIN_INITIAL.split('\n').slice(0, 9).join('\n'); // 1-8
-      
-      // 最新的接龍訊息（要複製的）
-      const latestChain = CHAIN_INITIAL;
-      
-      // 已傳送的新接龍（加上自己的名字）
-      const newChain = S.chainSent ? S.chainCopied + '\n11. ' + CHAIN_USER_NAME : '';
-      
-      return `<div class="scr chat-room">
-        <div class="appbar"><span class="back">‹</span><span class="avatar" style="background:#ff9800">社</span><span>社區團購群 (48)</span></div>
-        <div class="scroll">
-          ${msg('大家好，這週有愛文芒果團購', false, '09:15')}
-          ${msg(oldChain1, false, '09:16', true)}
-          ${msg('我要一箱！', false, '09:20')}
-          ${msg('上次的芒果很甜', false, '09:22')}
-          ${msg(oldChain2, false, '09:25', true)}
-          ${msg('還有名額嗎？', false, '09:30')}
-          ${msg(latestChain, false, '09:35', true)}
-          ${newChain ? msg(newChain, true, '現在') : ''}
-        </div>
-        ${st.screen === 'groupChatInput' ? '' : `<div class="chat-input-bar">
-          <button class="chat-plus" data-wrong="這次不用 ＋ 按鈕。請<b>長按</b>最下面的接龍訊息。">${I.plus}</button>
-          <div class="chat-input" data-wrong="先不要按輸入框。請<b>長按</b>最下面的接龍訊息（就是一大串名字那個）。">輸入訊息</div>
-          <button class="chat-send" data-wrong="還沒輸入訊息喔。請先<b>長按</b>最下面的接龍訊息。">${I.send}</button>
-        </div>`}
-      </div>`;
-    },
-
-    copyMenu: () => `<div class="scr copy-menu">
-      <div class="menu-overlay" data-wrong="請按下面選單中的「複製」。"></div>
-      <div class="copy-popup">
-        <button class="copy-menu-item" data-t="copy-text"><span>複製</span></button>
-        <button class="copy-menu-item" data-wrong="這是「轉傳」。我們要按「複製」。"><span>轉傳</span></button>
-        <button class="copy-menu-item" data-wrong="這是「回覆」。我們要按「複製」。"><span>回覆</span></button>
-        <button class="copy-menu-item" data-wrong="這是「收回」。我們要按「複製」。"><span>收回</span></button>
-      </div>
-    </div>`,
 
     groupChatInput: () => {
       const st = step();
@@ -571,6 +752,21 @@
     F: { name: '在群組接龍留名字', steps: [
       { screen: 'home', target: 'line', say: '這是手機的桌面。請按<span class="em">綠色的「LINE」</span>圖示。' },
       { screen: 'lineHome', target: 'chat-tab', say: '打開 LINE 了！請按<span class="em">下方的「聊天」</span>。' },
+      { screen: 'lineChat', target: 'open-group', say: '這是聊天列表。請按<span class="em">「社區團購群」</span>打開群組。' },
+      { screen: 'groupChat', target: 'long-press-msg', say: '群組裡有團購接龍訊息。請<span class="em">長按最下面最新的</span>接龍訊息（一大串名字）。' },
+      { screen: 'lineLongPress', target: 'copy-item', say: 'LINE 的選單出現了！請按<span class="em">「複製」</span>。' },
+      { screen: 'groupChatCopied', target: 'input-box', say: '已複製！現在請<span class="em">點擊下方的輸入框</span>（寫「輸入訊息」的地方）。' },
+      { screen: 'groupChatKeyboard', target: 'long-press-input', say: '鍵盤出現了！請<span class="em">長按輸入框內部</span>（白色的地方），準備貼上。' },
+      { screen: 'androidPaste', target: 'paste-popup', say: 'Android 的「貼上」選項出現了！請按<span class="em">「貼上」</span>。' },
+      { screen: 'groupChatPasted', target: 'enter-key', say: '接龍訊息貼上了！游標在最後。請按<span class="em">鍵盤右下角的「換行」鍵</span>。' },
+      { screen: 'groupChatNewline', target: 'switch-123', say: '游標跳到新行了！現在要輸入「11.」。請先按<span class="em">左下角的「符號」</span>切換到數字。' },
+      { screen: 'groupChatNum', target: 'type-11', say: '數字鍵盤出現了！請<span class="em">依序按 1 1 .</span>（點三次）。' },
+      { screen: 'groupChatZhuyin1', target: 'type-xiao', say: '輸入「小」：請<span class="em">依序按 ㄒ ㄧ ㄠ ˇ</span>，然後按候選列的<span class="em">「小」</span>。' },
+      { screen: 'groupChatZhuyin2', target: 'type-rong', say: '輸入「蓉」：請<span class="em">依序按 ㄖ ㄨ ㄥ ˊ</span>，然後按候選列的<span class="em">「蓉」</span>。' },
+      { screen: 'groupChatComplete', target: 'send-btn', say: '名字輸入完成了！請按<span class="em">右側的傳送按鈕</span>（紙飛機）。' },
+      { screen: 'groupChatSent', final: true, say: '🎉 太棒了！你的名字已經加到接龍裡，傳送到群組了！' }
+    ] }
+      { screen: 'lineHome', target: 'chat-tab', say: '打開 LINE 了！請按<span class="em">下方的「聊天」</span>。' },
       { screen: 'lineChat', target: 'open-chat', say: '這是聊天列表。請按<span class="em">「社區團購群」</span>打開群組。' },
       { screen: 'groupChat', target: 'long-press-chain', 
         say: '群組裡有團購接龍訊息（一串名字）。請<span class="em">長按最下面最新的</span>接龍訊息。' },
@@ -722,21 +918,25 @@
       else if (S.amt.length < 5 && !(S.amt === '' && d === '0')) S.amt += d;
       render(true);
     },
-    type(b) {
+    input(b) {
       const v = b.dataset.v;
-      S.chainCopied += v;
+      S.chainInput += v;
       render(true);
-      
-      const st = step();
-      
-      // 根據不同步驟給予不同的反饋
-      if (st.target === 'type-number') {
-        toast('👍 序號加好了！', true);
-        setTimeout(next, 500);
-      } else if (st.target === 'type-name') {
-        toast('👍 名字加好了！', true);
-        setTimeout(next, 500);
+      if (S.chainInput === '11.') {
+        setTimeout(() => {
+          S.zhuyinBuf = '';
+          next();
+        }, 300);
       }
+    },
+    'switch-zh'() {
+      S.zhuyinBuf = '';
+      next();
+    },
+    zhuyin(b) {
+      const v = b.dataset.v;
+      S.zhuyinBuf += v;
+      render(true);
     }
   };
 
@@ -746,7 +946,20 @@
     const act = e.target.closest('[data-act]');
     if (act && el.screen.contains(act)) { ACTIONS[act.dataset.act](act); return; }
     const t = e.target.closest('[data-t]');
-    if (t && st.target && t.dataset.t === st.target) { success(); return; }
+    if (t && st.target && t.dataset.t === st.target) {
+      const v = t.dataset.v;
+      if (st.target === 'type-xiao' || st.target === 'type-rong') {
+        S.chainInput += v;
+        S.zhuyinBuf = '';
+        success();
+      } else if (st.target === 'copy-item') {
+        toast('已複製', false);
+        setTimeout(success, 800);
+      } else {
+        success();
+      }
+      return;
+    }
     if (st.final || S.busy) return;
     const explicitWrong = e.target.closest('[data-wrong]');
     if (!explicitWrong && e.target.closest('[data-neutral]')) return;
@@ -782,7 +995,7 @@
     const o = $('#optSpeak'); o.setAttribute('aria-pressed', v); o.textContent = `🔊 自動唸出說明：${v ? '開' : '關'}`;
   }
   function startScenario(k) {
-    S.scn = k; S.cart = {}; S.pin = ''; S.amt = ''; S.locationSent = false; S.locAddr = ''; S.searchText = ''; S.chainCopied = ''; S.chainSent = false;
+    S.scn = k; S.cart = {}; S.pin = ''; S.amt = ''; S.locationSent = false; S.locAddr = ''; S.searchText = ''; S.chainInput = ''; S.zhuyinBuf = '';
     el.start.hidden = true; el.practice.hidden = false; el.menuBtn.hidden = false;
     try { history.replaceState(null, '', '#' + k); } catch (e) { /* file:// */ }
     window.scrollTo(0, 0);
